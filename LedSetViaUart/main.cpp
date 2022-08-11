@@ -16,15 +16,35 @@
 
 static int chars_rxed = 0;
 
+#define BUILDIN_LED_PIN 25
+
+void InitPin(int pin) {
+    gpio_init(pin);
+    gpio_set_dir(pin, GPIO_OUT);
+}
+
+void TernOn(int pin) {
+    gpio_put(pin, 1);
+}
+
+void TernOff(int pin) {
+    gpio_put(pin, 0);
+}
+
+
 // RX interrupt handler
 void on_uart_rx() {
     while (uart_is_readable(UART_ID)) {
         uint8_t ch = uart_getc(UART_ID);
         // Can we send it back?
         if (uart_is_writable(UART_ID)) {
-            // Change it slightly first!
-            ch++;
             uart_putc(UART_ID, ch);
+        }
+
+        if (ch == 'w') {
+            TernOn(BUILDIN_LED_PIN);
+        } else if (ch == 's') {
+            TernOff(BUILDIN_LED_PIN);
         }
         chars_rxed++;
     }
@@ -33,6 +53,9 @@ void on_uart_rx() {
 int main() {
     // Set up our UART with a basic baud rate.
     uart_init(UART_ID, 2400);
+
+
+    InitPin(BUILDIN_LED_PIN);
 
     // Set the TX and RX pins by using the function select on the GPIO
     // Set datasheet for more information on function select
@@ -70,7 +93,7 @@ int main() {
     // The handler will count them, but also reflect the incoming data back with a slight change!
     uart_puts(UART_ID, "\nHello, uart interrupts\n");
 
-    while (1)
+    while (1) {
         tight_loop_contents();
+    }
 }
-
